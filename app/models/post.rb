@@ -8,11 +8,15 @@ class Post < ApplicationRecord
 
   scope :with_average_rating, -> {
     left_joins(:ratings)
-      .select("posts.*, AVG(ratings.value) AS average_rating")
+      .select("posts.*, COALESCE(AVG(ratings.value), 0) AS average_rating")
       .group("posts.id")
   }
 
-  def self.top_rated(limit = 5)
+  def average_rating
+    ratings.average(:value) || 0
+  end
+
+  def self.top_rated(limit)
     with_average_rating.order("average_rating DESC NULLS LAST").limit(limit)
   end
 

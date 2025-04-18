@@ -13,7 +13,7 @@ module Api::V1
     end
 
     def top_rated
-      posts = Post.top_rated(params[:limit])
+      posts = Post.top_rated(params[:limit] || 5)
       render json: posts, status: :ok
     end
 

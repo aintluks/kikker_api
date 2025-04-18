@@ -27,7 +27,7 @@ module Api::V1
     end
 
     def render_accepted_response
-      render json: { average_rating: Rating.average_rating(@post.id) }, status: :accepted
+      render json: { average_rating: @post.average_rating }, status: :accepted
     end
 
     def render_unprocessable_entity(message)

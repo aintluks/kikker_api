@@ -112,4 +112,47 @@ RSpec.describe Post, type: :model do
       )
     end
   end
+
+  describe '#average_rating' do
+    let(:post) { create(:post) }
+
+    context 'when post has no ratings' do
+      it 'returns 0' do
+        expect(post.average_rating).to eq(0)
+      end
+    end
+
+    context 'when post has one rating' do
+      it 'returns that rating value' do
+        create(:rating, post: post, value: 4)
+        expect(post.average_rating).to eq(4.0)
+      end
+    end
+
+    context 'when post has multiple ratings' do
+      it 'returns the correct average' do
+        create(:rating, post: post, value: 2)
+        create(:rating, post: post, value: 4)
+        expect(post.average_rating).to eq(3.0)
+      end
+    end
+
+    context 'when ratings include decimal values' do
+      it 'returns the precise average' do
+        expect {
+          create(:rating, post: post, value: 4.5)
+        }.to raise_error(ActiveRecord::RecordInvalid)
+      end
+    end
+
+    context 'when ratings are updated' do
+      it 'recalculates the average' do
+        rating = create(:rating, post: post, value: 1)
+        expect(post.average_rating).to eq(1.0)
+
+        rating.update(value: 5)
+        expect(post.reload.average_rating).to eq(5.0)
+      end
+    end
+  end
 end

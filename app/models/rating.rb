@@ -10,9 +10,4 @@ class Rating < ApplicationRecord
                     }
 
   validates :user_id, uniqueness: { scope: :post_id, message: "can only rate a post once" }
-
-  def self.average_rating(post_id)
-    post = Post.find(post_id)
-    post.ratings.average(:value)
-  end
 end

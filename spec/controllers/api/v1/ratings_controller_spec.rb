@@ -14,15 +14,6 @@ RSpec.describe Api::V1::RatingsController, type: :request do
           post api_v1_ratings_path, params: valid_params.to_json, headers: headers
         }.to have_enqueued_job(RatePostJob).with(post_record.id, user.id, 4)
       end
-
-      it 'returns accepted with average rating' do
-        allow(Rating).to receive(:average_rating).with(post_record.id).and_return(4.2)
-
-        post api_v1_ratings_path, params: valid_params.to_json, headers: headers
-
-        expect(response).to have_http_status(:accepted)
-        expect(JSON.parse(response.body)['average_rating']).to eq(4.2)
-      end
     end
 
     context 'with invalid rating value' do

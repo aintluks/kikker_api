@@ -8,6 +8,8 @@ class RatePostJob < ApplicationJob
 
     ActiveRecord::Base.transaction do
       post.with_lock do
+        raise ActiveRecord::RecordInvalid if post.ratings.exists?(user_id: user_id)
+
         rating = post.ratings.create!(user: user, value: value)
       end
     end
