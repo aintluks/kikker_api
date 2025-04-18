@@ -92,4 +92,24 @@ RSpec.describe Post, type: :model do
       expect(result.map(&:title)).to eq([ 'High', 'Mid' ])
     end
   end
+
+  describe '.grouped_ips_with_logins' do
+    it 'returns IPs with unique logins of authors' do
+      user1 = create(:user, login: 'igor')
+      user2 = create(:user, login: 'bruno')
+      user3 = create(:user, login: 'larissa')
+
+      create(:post, user: user1, ip: '1.1.1.1')
+      create(:post, user: user2, ip: '1.1.1.1')
+      create(:post, user: user3, ip: '2.2.2.2')
+      create(:post, user: user1, ip: '1.1.1.1')
+
+      result = Post.grouped_ips_with_logins
+
+      expect(result).to contain_exactly(
+        { ip: '1.1.1.1', logins: match_array([ 'igor', 'bruno' ]) },
+        { ip: '2.2.2.2', logins: [ 'larissa' ] }
+      )
+    end
+  end
 end

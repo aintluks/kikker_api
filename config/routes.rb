@@ -5,6 +5,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       resources :posts, only: [ :create ] do
         get "top_rated", on: :collection
+        get "ip_authors", on: :collection
       end
 
       resources :ratings, only: [ :create ]
