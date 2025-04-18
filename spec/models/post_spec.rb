@@ -76,4 +76,20 @@ RSpec.describe Post, type: :model do
       end
     end
   end
+
+  describe '.top_rated' do
+    it 'returns the N posts with the highest average rating' do
+      low = create(:post, title: 'Low')
+      mid = create(:post, title: 'Mid')
+      high = create(:post, title: 'High')
+
+      create_list(:rating, 3, post: low, value: 2)
+      create_list(:rating, 3, post: mid, value: 3)
+      create_list(:rating, 3, post: high, value: 5)
+
+      result = Post.top_rated(2)
+
+      expect(result.map(&:title)).to eq([ 'High', 'Mid' ])
+    end
+  end
 end
