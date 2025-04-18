@@ -4,7 +4,7 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :posts, only: [ :create ] do
-        get 'top_rated', on: :collection
+        get "top_rated", on: :collection
       end
 
       resources :ratings, only: [ :create ]
