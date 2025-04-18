@@ -122,7 +122,7 @@ RSpec.describe RatePostJob, type: :job do
       it 'retries 3 times on RecordInvalid' do
         job = described_class.new
         allow(job).to receive(:perform).and_raise(ActiveRecord::RecordInvalid.new(Rating.new))
-      
+
         expect {
           job.send(:rescue_with_handler, ActiveRecord::RecordInvalid.new(Rating.new)) || raise(ActiveRecord::RecordInvalid)
         }.to raise_error(ActiveRecord::RecordInvalid)
