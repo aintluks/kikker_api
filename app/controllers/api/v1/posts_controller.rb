@@ -1,6 +1,6 @@
 module Api::V1
   class PostsController < ApplicationController
-    before_action :set_user, only: [:create]
+    before_action :set_user, only: [ :create ]
 
     def create
       post = @user.posts.build(post_params)

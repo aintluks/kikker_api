@@ -39,8 +39,8 @@ RSpec.describe Api::V1::PostsController, type: :request do
 
       it 'creates a new User when login does not exist' do
         expect {
-          post api_v1_posts_path, 
-               params: { title: 'New', body: 'Content', ip: '1.1.1.1', login: 'newuser' }.to_json, 
+          post api_v1_posts_path,
+               params: { title: 'New', body: 'Content', ip: '1.1.1.1', login: 'newuser' }.to_json,
                headers: headers
         }.to change(User, :count).by(1)
       end
@@ -77,9 +77,9 @@ RSpec.describe Api::V1::PostsController, type: :request do
           ip: '',
           login: user.login
         }.to_json
-      
+
         post api_v1_posts_path, params: invalid_params, headers: headers
-      
+
         expect(response).to have_http_status(:unprocessable_entity)
         expect(json_response.keys).to include('errors')
         expect(json_response['errors']).to be_an(Array)
