@@ -65,6 +65,16 @@ RSpec.configure do |config|
 
   config.include FactoryBot::Syntax::Methods
   config.include RequestHelpers, type: :request
+  config.include ActiveJob::TestHelper
+
+  config.before(:each) do
+    ActiveJob::Base.queue_adapter = :test
+  end
+
+  config.after(:each) do
+    clear_enqueued_jobs
+    clear_performed_jobs
+  end
 
   # Filter lines from Rails gems in backtraces.
   config.filter_rails_from_backtrace!
