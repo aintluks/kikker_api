@@ -12,6 +12,11 @@ module Api::V1
       end
     end
 
+    def top_rated
+      posts = Post.top_rated(params[:limit])
+      render json: posts, status: :ok
+    end
+
     private
 
     def set_user
