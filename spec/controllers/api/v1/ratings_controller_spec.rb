@@ -11,9 +11,9 @@ RSpec.describe Api::V1::RatingsController, type: :request do
     context 'with valid parameters' do
       it 'executes RatePostJob immediately' do
         allow(RatePostJob).to receive(:perform_now).and_return(true)
-        
+
         post api_v1_ratings_path, params: valid_params.to_json, headers: headers
-        
+
         expect(RatePostJob).to have_received(:perform_now)
           .with(post_record, user, 4)
       end
@@ -32,11 +32,11 @@ RSpec.describe Api::V1::RatingsController, type: :request do
         allow(RatePostJob).to receive(:perform_now)
           .with(post_record, user, 6)
           .and_raise(ArgumentError.new('value must be between 1 and 5'))
-    
+
         post api_v1_ratings_path,
              params: valid_params.merge(value: 6).to_json,
              headers: headers
-    
+
         expect(response).to have_http_status(:unprocessable_entity)
         expect(JSON.parse(response.body)['errors'].first).to match(/value must be between 1 and 5/i)
       end
@@ -80,23 +80,23 @@ RSpec.describe Api::V1::RatingsController, type: :request do
       before do
         create(:rating, post: post_record, user: user)
       end
-    
+
       it 'returns unprocessable_entity status' do
         post api_v1_ratings_path, params: valid_params.to_json, headers: headers
-        
+
         expect(response).to have_http_status(:unprocessable_entity)
         expect(JSON.parse(response.body)['errors']).to include('User already rated this post')
       end
-    
+
       it 'does not enqueue a job' do
         expect(RatePostJob).not_to receive(:perform_now)
-        
+
         post api_v1_ratings_path, params: valid_params.to_json, headers: headers
       end
-    
+
       it 'responds quickly without database calls' do
         expect(post_record.ratings).not_to receive(:exists?)
-        
+
         post api_v1_ratings_path, params: valid_params.to_json, headers: headers
       end
     end

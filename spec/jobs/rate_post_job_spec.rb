@@ -108,11 +108,11 @@ RSpec.describe RatePostJob, type: :job do
         allow_any_instance_of(ActiveRecord::Associations::CollectionProxy)
           .to receive(:create!)
           .and_raise(ActiveRecord::RecordInvalid.new(Rating.new))
-        
+
         allow(Rails.logger).to receive(:error)
       end
-    
-      it 'logs an error when rating fails' do    
+
+      it 'logs an error when rating fails' do
         expect {
           described_class.perform_now(post, user, value)
         }.to raise_error(ActiveRecord::RecordInvalid)
@@ -130,7 +130,7 @@ RSpec.describe RatePostJob, type: :job do
         expect {
           described_class.perform_now(post, user, value)
         }.to raise_error(ActiveRecord::RecordInvalid)
-    
+
         expect(Rating.count).to eq(0)
       end
     end
@@ -138,21 +138,21 @@ RSpec.describe RatePostJob, type: :job do
     context 'when user tries to rate the same post again' do
       it 'raises error for duplicate rating' do
         described_class.perform_now(post, user, value)
-    
+
         expect {
           described_class.perform_now(post, user, value)
         }.to raise_error(ActiveRecord::RecordInvalid)
       end
     end
-    
+
     context 'when rating value is out of valid range' do
       it 'raises RecordInvalid for out-of-bounds value' do
         expect {
           described_class.perform_now(post, user, 10)
         }.to raise_error(ActiveRecord::RecordInvalid)
-    
+
         expect(post.ratings.count).to eq(0)
       end
-    end    
+    end
   end
 end
