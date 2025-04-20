@@ -20,9 +20,10 @@ class Post < ApplicationRecord
     with_average_rating.order("average_rating DESC NULLS LAST").limit(limit)
   end
 
-  def self.grouped_ips_with_logins
+  def self.grouped_ips_with_logins(limit)
     joins(:user)
       .group(:ip)
+      .limit(limit)
       .pluck(:ip, Arel.sql("ARRAY_AGG(users.login)"))
       .map { |ip, logins| { ip: ip, logins: logins.uniq } }
   end

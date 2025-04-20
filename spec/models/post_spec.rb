@@ -104,7 +104,7 @@ RSpec.describe Post, type: :model do
       create(:post, user: user3, ip: '2.2.2.2')
       create(:post, user: user1, ip: '1.1.1.1')
 
-      result = Post.grouped_ips_with_logins
+      result = Post.grouped_ips_with_logins(5)
 
       expect(result).to contain_exactly(
         { ip: '1.1.1.1', logins: match_array([ 'igor', 'bruno' ]) },

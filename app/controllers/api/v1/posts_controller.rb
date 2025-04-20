@@ -17,6 +17,11 @@ module Api::V1
       render json: posts, include_user: false, status: :ok
     end
 
+    def ip_authors
+      authors = Post.grouped_ips_with_logins(params[:limit] || 5)
+      render json: authors, status: :ok
+    end
+
     private
 
     def set_user
