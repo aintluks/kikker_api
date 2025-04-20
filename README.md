@@ -8,19 +8,18 @@ A Kikker API é uma aplicação que permite criar posts, avaliá-los e visualiza
 
 ## Funcionalidades
 
-- Criação de posts com título, corpo e IP do autor
-- Sistema de avaliação (1-5 estrelas) para posts
-- Prevenção de avaliações duplicadas (um usuário só pode avaliar um post uma vez)
-- Endpoint para visualizar posts mais bem avaliados
-- Endpoint para visualizar autores agrupados por IP
-- Processamento assíncrono de avaliações para melhor performance
+- Criação de posts com título, corpo e IP
+- Sistema de avaliação de posts (1-5)
+- Prevenção de avaliações duplicadas por usuário
+- Processamento assíncrono de avaliações
+- Consulta de posts mais bem avaliados
+- Agrupamento de autores por IP
 
-## Requisitos
+## Requisitos do Sistema
 
 - Ruby 3.0.0 ou superior
 - Rails 8.0.2 ou superior
 - PostgreSQL 12 ou superior
-- Redis (para processamento de jobs assíncronos)
 - Sidekiq (para processamento de jobs assíncronos)
 
 ## Versões Utilizadas
@@ -35,36 +34,35 @@ Este projeto utiliza as seguintes versões de dependências:
 ## Instalação
 
 1. Clone o repositório:
-   ```
+   ```bash
    git clone https://github.com/aintluks/kikker_api.git
    cd kikker_api
    ```
 
 2. Instale as dependências:
-   ```
+   ```bash
    bundle install
    ```
 
 3. Configure o banco de dados:
-   ```
-   rails db:create
-   rails db:migrate
-   ```
-
-4. Inicie o Sidekiq em um terminal separado:
-   ```
-   bundle exec sidekiq
+   ```bash
+   rails db:create db:migrate
    ```
 
-5. Inicie o servidor Rails:
-   ```
+4. Inicie o servidor:
+   ```bash
    rails server
    ```
 
-## Populando o banco de dados
+5. Em outro terminal, inicie o Sidekiq:
+   ```bash
+   bundle exec sidekiq
+   ```
 
-Para popular o banco de dados com dados de exemplo, execute:
-```
+## Populando o Banco de Dados
+
+Para criar dados de exemplo, execute:
+```bash
 rails db:seed
 ```
 
@@ -77,35 +75,95 @@ Este comando irá:
 
 ### Posts
 
-- `POST /api/v1/posts` - Cria um novo post
-  - Parâmetros: `login`, `title`, `body`, `ip`
-  - Resposta: 201 Created com os dados do post
+#### Criar Post
+```
+POST /api/v1/posts
+```
+Parâmetros:
+- `title`: Título do post
+- `body`: Conteúdo do post
+- `ip`: Endereço IP
+- `login`: Login do usuário (será criado se não existir)
 
-- `GET /api/v1/posts/top_rated` - Retorna os posts mais bem avaliados
-  - Parâmetros opcionais: `limit` (padrão: 5)
-  - Resposta: 200 OK com a lista de posts
+Resposta (201 Created):
+```json
+{
+  "id": 1,
+  "title": "Título do Post",
+  "body": "Conteúdo do post",
+  "ip": "192.168.1.1",
+  "user_id": 1,
+}
 
-- `GET /api/v1/posts/ip_authors` - Retorna autores agrupados por IP
-  - Resposta: 200 OK com a lista de IPs e seus autores
+```
+
+#### Posts Mais Bem Avaliados
+```
+GET /api/v1/posts/top_rated?limit=5
+```
+Parâmetros:
+- `limit`: Número de posts a retornar (padrão: 5)
+
+Resposta (200 OK):
+```json
+[
+  {
+    "id": 3,
+    "title": "Molestiae facilis inventore totam sed.",
+    "body": "Veniam neque expedita ad illo odit. In itaque autem corrupti."
+  },
+  {
+    "id": 9,
+    "title":  "Enim labore harum ad iusto.",
+    "body": "Cum provident suscipit consectetur consequatur iusto beatae."
+  }
+]
+```
 
 ### Avaliações
 
-- `POST /api/v1/ratings` - Cria uma nova avaliação
-  - Parâmetros: `post_id`, `user_id`, `value` (1-5)
-  - Resposta: 202 Accepted com a média de avaliações do post
+#### Criar Avaliação
+```
+POST /api/v1/ratings
+```
+Parâmetros:
+- `post_id`: ID do post
+- `user_id`: ID do usuário
+- `value`: Valor da avaliação (1-5)
+
+Resposta (202 Accepted):
+```json
+{
+  "average_rating": 4.5
+}
+```
+
+Possíveis erros:
+- 404 Not Found: Post ou usuário não encontrado
+- 422 Unprocessable Entity: 
+  - Usuário já avaliou este post
+  - Valor da avaliação inválido
+- 500 Internal Server Error: Erro interno do servidor
 
 ## Estrutura do Projeto
 
-- `app/controllers/api/v1/` - Controladores da API
-- `app/models/` - Modelos de dados
-- `app/jobs/` - Jobs assíncronos
-- `db/migrate/` - Migrações do banco de dados
-- `spec/` - Testes automatizados
+- `app/controllers/api/v1/`: Controladores da API
+- `app/models/`: Modelos do sistema
+- `app/jobs/`: Jobs para processamento assíncrono
+- `db/seeds.rb`: Script para população do banco
+- `spec/`: Testes da aplicação
+
+## Processamento Assíncrono
+
+A API utiliza Sidekiq para processar avaliações de forma assíncrona:
+
+1. Quando uma avaliação é criada, um job é enfileirado
+2. O job tenta criar a avaliação
+3. Se ocorrer um erro, o job é reenfileirado
 
 ## Testes
 
 Para executar os testes:
-
-```
+```bash
 bundle exec rspec
 ```
