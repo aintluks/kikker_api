@@ -9,23 +9,36 @@ RSpec.describe Api::V1::RatingsController, type: :request do
     let(:valid_params) { { post_id: post_record.id, user_id: user.id, value: 4 } }
 
     context 'with valid parameters' do
-      it 'enqueues RatePostJob' do
-        expect {
-          post api_v1_ratings_path, params: valid_params.to_json, headers: headers
-        }.to have_enqueued_job(RatePostJob).with(post_record.id, user.id, 4)
+      it 'executes RatePostJob immediately' do
+        allow(RatePostJob).to receive(:perform_now).and_return(true)
+        
+        post api_v1_ratings_path, params: valid_params.to_json, headers: headers
+        
+        expect(RatePostJob).to have_received(:perform_now)
+          .with(post_record, user, 4)
+      end
+
+      it 'returns accepted status' do
+        allow(RatePostJob).to receive(:perform_now).and_return(true)
+
+        post api_v1_ratings_path, params: valid_params.to_json, headers: headers
+
+        expect(response).to have_http_status(:accepted)
       end
     end
 
     context 'with invalid rating value' do
       it 'returns unprocessable_entity' do
-        allow(RatePostJob).to receive(:perform_later).and_raise(ArgumentError, 'value must be between 1 and 5')
-
+        allow(RatePostJob).to receive(:perform_now)
+          .with(post_record, user, 6)
+          .and_raise(ArgumentError.new('value must be between 1 and 5'))
+    
         post api_v1_ratings_path,
              params: valid_params.merge(value: 6).to_json,
              headers: headers
-
+    
         expect(response).to have_http_status(:unprocessable_entity)
-        expect(JSON.parse(response.body)['errors'].first).to match(/value must be between 1 and 5/)
+        expect(JSON.parse(response.body)['errors'].first).to match(/value must be between 1 and 5/i)
       end
     end
 
@@ -53,7 +66,7 @@ RSpec.describe Api::V1::RatingsController, type: :request do
 
     context 'when job fails unexpectedly' do
       before do
-        allow(RatePostJob).to receive(:perform_later).and_raise(StandardError, 'Queue down')
+        allow(RatePostJob).to receive(:perform_now).and_raise(StandardError, 'Queue down')
       end
 
       it 'returns internal_server' do
