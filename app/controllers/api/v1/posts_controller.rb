@@ -27,7 +27,7 @@ module Api::V1
 
       render json: {
         data: authors,
-        meta: pagination_dict(authors),
+        meta: pagination_dict(authors)
       }, status: :ok
     end
 
