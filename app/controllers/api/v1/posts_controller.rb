@@ -14,7 +14,7 @@ module Api::V1
 
     def top_rated
       posts = Post.top_rated(params[:limit] || 5)
-      render json: posts, status: :ok
+      render json: posts, include_user: false, status: :ok
     end
 
     private
