@@ -82,16 +82,67 @@ RSpec.describe Post, type: :model do
       low = create(:post, title: 'Low')
       mid = create(:post, title: 'Mid')
       high = create(:post, title: 'High')
-
+  
       create_list(:rating, 3, post: low, value: 2)
       create_list(:rating, 3, post: mid, value: 3)
       create_list(:rating, 3, post: high, value: 5)
-
-      result = Post.top_rated(2)
-
-      expect(result.map(&:title)).to eq([ 'High', 'Mid' ])
+  
+      result = Post.top_rated.limit(2)
+ 
+      expect(result.map(&:title)).to eq(['High', 'Mid'])
     end
-  end
+  
+    it 'returns posts ordered by average rating in descending order' do
+      post1 = create(:post, title: 'Post 1')
+      post2 = create(:post, title: 'Post 2')
+      post3 = create(:post, title: 'Post 3')
+  
+      create_list(:rating, 3, post: post1, value: 4)
+      create_list(:rating, 3, post: post2, value: 5)
+      create_list(:rating, 3, post: post3, value: 2)
+  
+      result = Post.top_rated.limit(3)
+  
+      expect(result.first.title).to eq('Post 2')
+      expect(result.second.title).to eq('Post 1')
+      expect(result.third.title).to eq('Post 3')
+    end
+  
+    it 'handles cases where there are posts with no ratings' do
+      post_with_ratings = create(:post, title: 'Post with ratings')
+      post_without_ratings = create(:post, title: 'Post without ratings')
+  
+      create_list(:rating, 3, post: post_with_ratings, value: 5)
+  
+      result = Post.top_rated.limit(2)
+  
+      expect(result).to include(post_with_ratings)
+      expect(result).not_to include(post_without_ratings)
+    end
+  
+    it 'returns posts with ratings, ignoring posts with no ratings' do
+      post_with_ratings = create(:post, title: 'Rated Post')
+      post_without_ratings = create(:post, title: 'Unrated Post')
+  
+      create_list(:rating, 3, post: post_with_ratings, value: 5)
+  
+      result = Post.top_rated
+  
+      expect(result).to include(post_with_ratings)
+      expect(result).not_to include(post_without_ratings)
+    end
+  
+    it 'calculates average rating correctly' do
+      post = create(:post, title: 'Test Post')
+      create_list(:rating, 3, post: post, value: 2)
+      create_list(:rating, 3, post: post, value: 5)
+  
+      result = Post.top_rated.first
+  
+      # The correct average is (2*3 + 5*3) / 6 = 3.5
+      expect(result.average_rating).to eq(3.5)
+    end
+  end    
 
   describe '.grouped_ips_with_logins' do
     it 'returns IPs with unique logins of authors' do
@@ -104,7 +155,7 @@ RSpec.describe Post, type: :model do
       create(:post, user: user3, ip: '2.2.2.2')
       create(:post, user: user1, ip: '1.1.1.1')
 
-      result = Post.grouped_ips_with_logins(5)
+      result = Post.grouped_ips_with_logins
 
       expect(result).to contain_exactly(
         { ip: '1.1.1.1', logins: match_array([ 'igor', 'bruno' ]) },

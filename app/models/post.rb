@@ -6,24 +6,20 @@ class Post < ApplicationRecord
   validates :body, presence: true
   validates :ip, presence: true
 
-  scope :with_average_rating, -> {
-    left_joins(:ratings)
-      .select("posts.*, COALESCE(AVG(ratings.value), 0) AS average_rating")
+  scope :top_rated, -> {
+    select("posts.*, AVG(ratings.value) as average_rating")
+      .joins(:ratings)
       .group("posts.id")
+      .order("average_rating DESC")
   }
 
   def average_rating
-    ratings.average(:value) || 0
+    ratings.average(:value).to_f
   end
 
-  def self.top_rated(limit)
-    with_average_rating.order("average_rating DESC NULLS LAST").limit(limit)
-  end
-
-  def self.grouped_ips_with_logins(limit)
+  def self.grouped_ips_with_logins
     joins(:user)
       .group(:ip)
-      .limit(limit)
       .pluck(:ip, Arel.sql("ARRAY_AGG(users.login)"))
       .map { |ip, logins| { ip: ip, logins: logins.uniq } }
   end
