@@ -99,25 +99,66 @@ Resposta (201 Created):
 
 #### Posts Mais Bem Avaliados
 ```
-GET /api/v1/posts/top_rated?limit=5
+GET /api/v1/posts/top_rated
 ```
 Parâmetros:
-- `limit`: Número de posts a retornar (padrão: 5)
+- `page`: Número da página (padrão: 1)
+- `per_page`: Itens por página (padrão: 10)
 
 Resposta (200 OK):
 ```json
-[
-  {
-    "id": 3,
-    "title": "Molestiae facilis inventore totam sed.",
-    "body": "Veniam neque expedita ad illo odit. In itaque autem corrupti."
-  },
-  {
-    "id": 9,
-    "title":  "Enim labore harum ad iusto.",
-    "body": "Cum provident suscipit consectetur consequatur iusto beatae."
+{
+  "data": [
+    {
+      "id": 3,
+      "title": "Molestiae facilis inventore totam sed.",
+      "body": "Veniam neque expedita ad illo odit. In itaque autem corrupti."
+    },
+    {
+      "id": 9,
+      "title": "Enim labore harum ad iusto.",
+      "body": "Cum provident suscipit consectetur consequatur iusto beatae."
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "next_page": null,
+    "prev_page": null,
+    "total_pages": 1,
+    "total_count": 2
   }
-]
+}
+```
+
+#### Autores por IP
+```
+GET /api/v1/posts/ip_authors
+```
+Parâmetros:
+- `page`: Número da página (padrão: 1)
+- `per_page`: Itens por página (padrão: 10)
+
+Resposta (200 OK):
+```json
+{
+  "data": [
+    {
+      "ip": "192.168.1.1",
+      "logins": ["usuario1", "usuario2"]
+    },
+    {
+      "ip": "10.0.0.1",
+      "logins": ["usuario3"]
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "next_page": null,
+    "prev_page": null,
+    "total_pages": 1,
+    "total_count": 2
+  }
+}
 ```
 
 ### Avaliações
