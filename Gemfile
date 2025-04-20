@@ -51,4 +51,5 @@ group :development, :test do
   gem "factory_bot_rails"
   gem "ffaker"
   gem "simplecov"
+  gem "pry-byebug"
 end
