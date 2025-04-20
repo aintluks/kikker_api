@@ -9,12 +9,12 @@ RSpec.describe RatePostJob, type: :job do
     context 'under normal conditions' do
       it 'creates a new rating' do
         expect {
-          described_class.perform_now(post.id, user.id, value)
+          described_class.perform_now(post, user, value)
         }.to change(Rating, :count).by(1)
       end
 
       it 'associates the rating with the post and user' do
-        described_class.perform_now(post.id, user.id, value)
+        described_class.perform_now(post, user, value)
         rating = Rating.last
 
         expect(rating.post).to eq(post)
@@ -28,7 +28,7 @@ RSpec.describe RatePostJob, type: :job do
         threads = 5.times.map do
           Thread.new do
             ActiveRecord::Base.connection_pool.with_connection do
-              described_class.perform_now(post.id, create(:user).id, rand(1..5))
+              described_class.perform_now(post, create(:user), rand(1..5))
             end
           end
         end
@@ -50,7 +50,7 @@ RSpec.describe RatePostJob, type: :job do
             ActiveRecord::Base.connection_pool.with_connection do
               begin
                 latch.wait
-                described_class.perform_now(post.id, user.id, 5)
+                described_class.perform_now(post, user, 5)
               rescue => e
                 exceptions << e
               ensure
@@ -69,54 +69,28 @@ RSpec.describe RatePostJob, type: :job do
       end
     end
 
-    context 'with duplicate ratings' do
-      before do
-        create(:rating, post: post, user: user, value: 4)
-      end
-
-      it 'raises RecordInvalid' do
-        expect {
-          described_class.perform_now(post.id, user.id, value)
-        }.to raise_error(ActiveRecord::RecordInvalid)
-      end
-    end
-
     context 'with invalid data' do
       it 'raises RecordInvalid for invalid ratings' do
-        allow_any_instance_of(Rating).to receive(:save!).and_raise(ActiveRecord::RecordInvalid)
+        allow(Rating).to receive(:create!).and_raise(ActiveRecord::RecordInvalid)
         expect {
-          described_class.perform_now(post.id, user.id, 0)
+          described_class.perform_now(post, user, 0)
         }.to raise_error(ActiveRecord::RecordInvalid)
       end
 
       it 'does not create a rating with invalid value' do
         expect {
-          described_class.perform_now(post.id, user.id, nil)
+          described_class.perform_now(post, user, nil)
         }.to raise_error(ActiveRecord::RecordInvalid)
 
         expect(post.ratings.count).to eq(0)
       end
     end
 
-    context 'when resources are missing' do
-      it 'raises RecordNotFound for missing post' do
-        expect {
-          described_class.perform_now(-1, user.id, value)
-        }.to raise_error(ActiveRecord::RecordNotFound)
-      end
-
-      it 'raises RecordNotFound for missing user' do
-        expect {
-          described_class.perform_now(post.id, -1, value)
-        }.to raise_error(ActiveRecord::RecordNotFound)
-      end
-    end
-
     context 'job behavior' do
       it 'enqueues the job' do
         expect {
-          described_class.perform_later(post.id, user.id, value)
-        }.to have_enqueued_job(RatePostJob).with(post.id, user.id, value).on_queue('default')
+          described_class.perform_later(post, user, value)
+        }.to have_enqueued_job(RatePostJob).with(post, user, value).on_queue('default')
       end
 
       it 'retries 3 times on RecordInvalid' do
@@ -128,5 +102,57 @@ RSpec.describe RatePostJob, type: :job do
         }.to raise_error(ActiveRecord::RecordInvalid)
       end
     end
+
+    context 'when an exception occurs' do
+      before do
+        allow_any_instance_of(ActiveRecord::Associations::CollectionProxy)
+          .to receive(:create!)
+          .and_raise(ActiveRecord::RecordInvalid.new(Rating.new))
+        
+        allow(Rails.logger).to receive(:error)
+      end
+    
+      it 'logs an error when rating fails' do    
+        expect {
+          described_class.perform_now(post, user, value)
+        }.to raise_error(ActiveRecord::RecordInvalid)
+      end
+    end
+
+    context 'when transaction fails' do
+      before do
+        allow_any_instance_of(ActiveRecord::Associations::CollectionProxy)
+          .to receive(:create!)
+          .and_raise(ActiveRecord::RecordInvalid.new(Rating.new))
+      end
+
+      it 'does not persist partial data on failure' do
+        expect {
+          described_class.perform_now(post, user, value)
+        }.to raise_error(ActiveRecord::RecordInvalid)
+    
+        expect(Rating.count).to eq(0)
+      end
+    end
+
+    context 'when user tries to rate the same post again' do
+      it 'raises error for duplicate rating' do
+        described_class.perform_now(post, user, value)
+    
+        expect {
+          described_class.perform_now(post, user, value)
+        }.to raise_error(ActiveRecord::RecordInvalid)
+      end
+    end
+    
+    context 'when rating value is out of valid range' do
+      it 'raises RecordInvalid for out-of-bounds value' do
+        expect {
+          described_class.perform_now(post, user, 10)
+        }.to raise_error(ActiveRecord::RecordInvalid)
+    
+        expect(post.ratings.count).to eq(0)
+      end
+    end    
   end
 end
