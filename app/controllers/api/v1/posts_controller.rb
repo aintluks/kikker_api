@@ -13,13 +13,22 @@ module Api::V1
     end
 
     def top_rated
-      posts = Post.top_rated(params[:limit] || 5)
-      render json: posts, include_user: false, status: :ok
+      posts = paginate(Post.top_rated)
+
+      render json: posts,
+        each_serializer: PostSerializer,
+        include_user: false,
+        adapter: :json,
+        meta: pagination_dict(posts)
     end
 
     def ip_authors
-      authors = Post.grouped_ips_with_logins(params[:limit] || 5)
-      render json: authors, status: :ok
+      authors = paginate(Post.grouped_ips_with_logins)
+
+      render json: {
+        data: authors,
+        meta: pagination_dict(authors),
+      }, status: :ok
     end
 
     private

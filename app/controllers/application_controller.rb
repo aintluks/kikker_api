@@ -1,4 +1,7 @@
 class ApplicationController < ActionController::API
+    include ApiHelper
+    include Paginatable
+
     before_action :ensure_json_request
 
     private
